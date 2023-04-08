@@ -1,75 +1,28 @@
-import ReactFlow, {
-  ReactFlowProvider,
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  Controls,
-  Background,
-  MiniMap,
-  type Connection,
-  type Edge,
-  type Node,
-  Panel,
-} from "reactflow";
-import CustomNode from "../CustomNode";
+import ReactFlow, { type Connection, type Edge, type Node } from "reactflow";
+import CustomNode from "../components/CustomNode";
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
 const nodeTypes = {
-  custom: CustomNode,
+  custom1: CustomNode,
 };
 
 const initialNodes: Node[] = [
-  {
-    id: "1",
-    type: "input",
-    data: { label: "Node 1" },
-    position: { x: 250, y: 5 },
-  },
-  {
-    id: "2",
-    data: { label: "Node 2" },
-    position: { x: 100, y: 100 },
-  },
-  {
-    id: "3",
-    data: { label: "Node 3" },
-    position: { x: 400, y: 100 },
-  },
-  {
-    id: "4",
-    data: { label: "Node 4" },
-    position: { x: 400, y: 200 },
-    type: "custom",
-    parentNode: "6",
-  },
-  {
-    id: "5",
-    data: { label: "Node 5" },
-    position: { x: 450, y: 450 },
-    parentNode: "6",
-  },
-  {
-    id: "6",
-    data: { label: "Node 6" },
-    position: { x: 500, y: 500 },
-    type: "group",
-  },
+  // 通过API获取
 ];
 
 const initialEdges: Edge[] = [
-  { id: "e1-2", source: "1", target: "2", animated: true },
-  { id: "e1-3", source: "1", target: "3", animated: true },
-  { id: "e1-4", source: "2", target: "3", animated: true },
+  // 通过API获取
 ];
 
-const getNewNode = (type: any, position: any) => {
+const getNewNode = (type: any, position: any, payload: any) => {
   return {
     id: getId(),
     type,
     position,
     data: { label: `${type} node` },
+    payload,
   };
 };
 

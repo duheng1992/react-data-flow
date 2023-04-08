@@ -1,17 +1,19 @@
 import { memo, type FC, type CSSProperties } from "react";
-import { Handle, Position, type NodeProps, NodeResizer } from "reactflow";
+import { Handle, Position, type NodeProps } from "reactflow";
 
 const sourceHandleStyleA: CSSProperties = { left: 50 };
 const sourceHandleStyleB: CSSProperties = {
   right: 50,
   left: "auto",
+  bottom: 10,
 };
 
 const CustomNode: FC<NodeProps> = ({ data, xPos, yPos }) => {
   return (
     <>
-      <NodeResizer />
+      {/* <NodeResizer /> */}
       <Handle type="target" position={Position.Top} />
+
       <div>
         <div>
           Label: <strong>{data.label}</strong>

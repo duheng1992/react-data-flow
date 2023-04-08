@@ -1,7 +1,7 @@
 import React from "react";
 import { useStoreApi, useReactFlow, ControlButton } from "reactflow";
 
-const initZoom = 1.2;
+const initZoom = 1.85;
 
 export default function Toolbar() {
   const store = useStoreApi();

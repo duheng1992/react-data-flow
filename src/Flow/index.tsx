@@ -11,20 +11,21 @@ import ReactFlow, {
   type Edge,
   type Node,
   Panel,
+  MarkerType,
 } from "reactflow";
 
-// this is important! You need to import the styles from the lib to make it work
 import "reactflow/dist/style.css";
 
 import "./Flow.css";
-import Toolbar from "./Toolbar";
-import LeftPanel from "./LeftPanel";
+import Toolbar from "./components/Toolbar";
+import PanelComponent from "./components/Panel";
 import {
   initialNodes,
   initialEdges,
   nodeTypes,
   getNewNode,
 } from "./service/node";
+// import ConnectionEdge from "./nodes/ConnectionEdge";
 
 const nodeColor = (node: Node) => {
   switch (node.type) {
@@ -40,13 +41,25 @@ const nodeColor = (node: Node) => {
 function Flow() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>();
+  const reactFlowWrapper = useRef<any>(null);
+
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection | Edge) => {
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+            },
+          },
+          eds
+        )
+      );
+    },
     [setEdges]
   );
-
-  const [reactFlowInstance, setReactFlowInstance] = useState();
-  const reactFlowWrapper = useRef<any>(null);
 
   const onDragOver = useCallback(
     (event: {
@@ -69,10 +82,24 @@ function Flow() {
       event.preventDefault();
 
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      const type = event.dataTransfer.getData("application/reactflow");
+      const nodeType = event.dataTransfer.getData(
+        "application/reactflow/nodeType"
+      );
+
+      let nodePayload: any = null;
+      try {
+        const payload = event.dataTransfer.getData(
+          "application/reactflow/payload"
+        );
+        if (payload) {
+          nodePayload = JSON.parse(payload);
+        }
+      } catch (e) {
+        console.error(e);
+      }
 
       // check if the dropped element is valid
-      if (typeof type === "undefined" || !type) {
+      if (nodeType === "undefined" || !nodeType) {
         return;
       }
 
@@ -82,11 +109,41 @@ function Flow() {
           y: event.clientY - reactFlowBounds.top,
         });
 
-        setNodes((nds) => nds.concat(getNewNode(type, position)));
+        setNodes((nds) =>
+          nds.concat(getNewNode(nodeType, position, nodePayload))
+        );
       }
     },
     [reactFlowInstance]
   );
+
+  const edgesWithUpdatedTypes = edges.map((edge) => {
+    // 找到该连线的源节点
+    const sourceNode = nodes.find((node) => node.id === edge.source);
+    const payload = (sourceNode as any)?.payload;
+    if (payload) {
+      if (payload.edgeClassname) {
+        edge.className = payload.edgeClassname;
+      }
+      if (payload.edgeStyle) {
+        edge.style = payload.edgeStyle;
+      }
+      if (payload.edgeLabel) {
+        edge.label = payload.edgeLabel;
+      }
+    }
+
+    return edge;
+  });
+
+  const onRestore = () => {};
+
+  const onSave = useCallback(() => {
+    if (reactFlowInstance) {
+      const flow = reactFlowInstance.toObject();
+      // localStorage.setItem(reactFlowInstance, JSON.stringify(flow));
+    }
+  }, [reactFlowInstance]);
 
   return (
     <ReactFlowProvider>
@@ -94,21 +151,37 @@ function Flow() {
         <ReactFlow
           nodes={nodes}
           onNodesChange={onNodesChange}
-          edges={edges}
+          edges={edgesWithUpdatedTypes}
           onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          // onNodeClick={console.log}
+          // edgeTypes={edgeTypes}
+          // connectionLineComponent={ConnectionEdge}
+          onConnect={(params: Connection | Edge) => {
+            return onConnect({ ...params });
+          }}
           fitView
           nodeTypes={nodeTypes}
           onDrop={onDrop}
           onDragOver={onDragOver}
           onInit={(instance: any) => setReactFlowInstance(instance)}
+          snapToGrid={true}
           onNodeContextMenu={(e: any, node: Node) => {
             e.preventDefault();
             e.stopPropagation();
           }}
+          onPaneContextMenu={(e: any) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onEdgeContextMenu={(e: any) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          selectionOnDrag={true}
+          // selectionKeyCode="ctrl"
         >
           <Panel position="top-left">
-            <LeftPanel />
+            <PanelComponent />
           </Panel>
           <Controls showFitView={false} showZoom={false}>
             <Toolbar />
@@ -120,6 +193,11 @@ function Flow() {
             zoomable
             pannable
           />
+
+          <div className="save_controls">
+            <button onClick={onSave}>save</button>
+            <button onClick={onRestore}>restore</button>
+          </div>
         </ReactFlow>
       </div>
     </ReactFlowProvider>
